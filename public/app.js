@@ -757,33 +757,36 @@ function paidHours(date, L) {
   return Math.max(0, m.onBlocks / 60 - m.unpaid);
 }
 
-// The period on the next paycheque and, once that one has closed, the period running now
+// Semi-monthly pay: the 9th–23rd is paid at month end, the 24th–8th on the 15th,
+// moved back to Friday when that lands on a weekend
+function weekdayBefore(iso) {
+  const dow = isoParts(iso).dow;
+  return dow === 6 ? addDays(iso, -1) : dow === 0 ? addDays(iso, -2) : iso;
+}
+function cycleFor(date) {
+  const p = isoParts(date);
+  const ymd = (y, m, d) => new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10);
+  if (p.d >= 9 && p.d <= 23) return {from: ymd(p.y, p.m, 9), to: ymd(p.y, p.m, 23), pay: weekdayBefore(ymd(p.y, p.m + 1, 0)), payEst: true};
+  const m = p.d >= 24 ? p.m : p.m - 1;
+  return {from: ymd(p.y, m, 24), to: ymd(p.y, m + 1, 8), pay: weekdayBefore(ymd(p.y, m + 1, 15)), payEst: true};
+}
+
+// The period on the next paycheque and, once that one has closed, the period running now.
+// Workday's calendar gives real pay dates; the 15th / month-end schedule fills any gap.
 function payPeriods() {
   const P = state.pay;
   if (!P) return [];
   const today = nowTZ().date;
-  const lastP = P.history[P.history.length - 1];
-  const len = lastP ? dayDiff(lastP.from, lastP.to) + 1 : 15;
-  const entry = state.weeks.flatMap(w => w ? w.entries : []).find(e => e.kind === 'payday' && e.date >= today);
-  const span = entry && /(\d{4}-\d\d-\d\d)\s*-\s*(\d{4}-\d\d-\d\d)/.exec(entry.note || '');
-  const from = span ? span[1] : lastP ? addDays(lastP.to, 1) : null;
-  if (!from) return [];
-  const to = span ? span[2] : addDays(from, len - 1);
-  const pay = P.nextPayDate || (entry && entry.date) || addDays(to, 7);
-  const lag = dayDiff(to, pay);
-  const out = [{from, to, pay, next: true}];
-  if (today > to) {
-    // Workday's calendar knows the pay date and period for the cycle running now
-    const cur = (P.payDates || []).find(p => p.from && p.to && p.from <= today && p.to >= today);
-    if (cur) { out.push({from: cur.from, to: cur.to, pay: cur.date}); return out; }
-    const f = addDays(to, 1), t = addDays(f, len - 1);
-    // Workday hasn't posted this pay date yet: same gap as the last one, pulled back off a weekend
-    let est = addDays(t, lag);
-    const dow = isoParts(est).dow;
-    if (dow === 6) est = addDays(est, -1); else if (dow === 0) est = addDays(est, -2);
-    out.push({from: f, to: t, pay: est, payEst: true});
+  const known = (P.payDates || []).filter(p => p.from && p.to);
+  const real = c => known.find(p => p.from === c.from) || null;
+  const pick = c => { const k = real(c); return k ? {from: k.from, to: k.to, pay: k.date} : c; };
+  const cur = pick(cycleFor(today));
+  const prev = pick(cycleFor(addDays(cur.from, -1)));
+  // Last cycle's cheque is still to come until its pay date passes
+  if (prev.pay >= today && !P.payslips.some(s => s.date === prev.pay)) {
+    return [Object.assign(prev, {next: true}), cur];
   }
-  return out;
+  return [Object.assign(cur, {next: true})];
 }
 
 function estimatePeriod(per, L, R, kept) {
