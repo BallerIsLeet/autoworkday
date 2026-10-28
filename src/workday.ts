@@ -1,5 +1,5 @@
 import { Jar, request, type Cookie } from "./jar.js";
-import { parsePayBatch, parsePayslip, parseWeek, previousWeekUri } from "./parse.js";
+import { nextWeekUri, parsePayBatch, parsePayslip, parseWeek, previousWeekUri } from "./parse.js";
 
 const HOST = process.env.WORKDAY_HOST ?? "https://wd5.myworkday.com";
 const IDENTITY = process.env.WORKDAY_IDENTITY_HOST ?? "https://wd5-identity.myworkday.com";
@@ -245,7 +245,33 @@ export class Workday {
       }
     }
     for (const p of pay.payslips) delete p.view;
+    try {
+      pay.payDates = await this.payDates();
+    } catch (err) {
+      if (err instanceof AuthError) throw err;
+      console.warn("Couldn't read pay dates:", (err as Error).message);
+    }
     return pay;
+  }
+
+  // Pay dates sit on the time calendar. Walk forward from this week until one pays for a
+  // period that reaches today, so the current pay cycle and its pay date are both known.
+  async payDates() {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
+    const out: { date: string; from: string | null; to: string | null }[] = [];
+    let data = await this.json(CURRENT_WEEK_TASK);
+    for (let i = 0; i < 5; i++) {
+      for (const e of parseWeek(data).entries) {
+        if (e.kind !== "payday" || out.some((p) => p.date === e.date)) continue;
+        const span = /(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})/.exec(e.note);
+        out.push({ date: e.date, from: span?.[1] ?? null, to: span?.[2] ?? null });
+      }
+      if (out.some((p) => p.to && p.to >= today)) break;
+      const uri = nextWeekUri(data);
+      if (!uri) break;
+      data = await this.json(`${HOST}${uri}.htmld`);
+    }
+    return out;
   }
 
   // Check in, or check out for a break, meal or the end of the day. Workday forms are

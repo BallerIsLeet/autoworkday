@@ -97,6 +97,10 @@ export function previousWeekUri(data: any): string | null {
   return data?.body?.children?.[0]?.previousButton?.values?.[0]?.uri ?? null;
 }
 
+export function nextWeekUri(data: any): string | null {
+  return data?.body?.children?.[0]?.nextButton?.values?.[0]?.uri ?? null;
+}
+
 export type Payslip = {
   date: string;
   rate: number | null; // base hourly rate on the newest "Hourly" earnings line
@@ -115,6 +119,8 @@ export type Pay = {
   payslips: { date: string; gross: number | null; net: number | null; view?: string }[];
   history: { period: string; from: string; to: string; earnings: number; deductions: number; net: number }[];
   latest?: Payslip | null;
+  // Pay dates from the time calendar, with the period each one pays for
+  payDates?: { date: string; from: string | null; to: string | null }[];
 };
 
 // Grids on a payslip are labelled in French and English, so find them by the fields they hold

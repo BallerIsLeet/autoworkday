@@ -773,6 +773,9 @@ function payPeriods() {
   const lag = dayDiff(to, pay);
   const out = [{from, to, pay, next: true}];
   if (today > to) {
+    // Workday's calendar knows the pay date and period for the cycle running now
+    const cur = (P.payDates || []).find(p => p.from && p.to && p.from <= today && p.to >= today);
+    if (cur) { out.push({from: cur.from, to: cur.to, pay: cur.date}); return out; }
     const f = addDays(to, 1), t = addDays(f, len - 1);
     // Workday hasn't posted this pay date yet: same gap as the last one, pulled back off a weekend
     let est = addDays(t, lag);
@@ -804,8 +807,8 @@ function renderEstimate(L) {
   const grid = $('#estGrid');
   if (!grid) return;
   if (!R || !state.pay) {
-    $('#estTxt').textContent = state.payLoading ? '…' : '—';
-    $('#estSub').textContent = '';
+    $('#estTxt').textContent = $('#cycTxt').textContent = state.payLoading ? '…' : '—';
+    $('#estSub').textContent = $('#cycSub').textContent = '';
     setHTML(grid, '<p class="loading-line">' + (state.payLoading ? 'Loading your payslips…' : 'Needs an hourly rate.') + '</p>');
     setHTML($('#estNote'), '');
     return;
@@ -814,14 +817,18 @@ function renderEstimate(L) {
   const E = payPeriods().map(p => estimatePeriod(p, L, R, kept));
   const span = e => shortDate(e.from) + ' – ' + shortDate(e.to);
   const take = e => e.net != null ? e.net : e.gross;
-  const first = E[0];
-  if (first) {
-    $('#estTxt').textContent = first.missing ? '…' : money(take(first));
-    $('#estSub').textContent = first.missing ? 'Loading older weeks…'
-      : hrs(first.hours) + ' h · ' + span(first) + (first.closed ? '' : ' so far') + (kept != null ? ' · take-home' : ' · before deductions');
-  }
+  const line = (txt, sub, e) => {
+    $(txt).textContent = !e ? '—' : e.missing ? '…' : money(take(e));
+    $(sub).textContent = !e ? '' : e.missing ? 'Loading older weeks…'
+      : (e.payEst ? 'Paid around ' : 'Paid ') + shortDate(e.pay, true) + ' · ' + hrs(e.hours) + ' h, ' + span(e) + (kept != null ? ' · take-home' : ' · before deductions');
+  };
+  // Home shows the cheque that's coming and the cycle you're working in now
+  const cycle = E.find(e => !e.closed) || null;
+  line('#estTxt', '#estSub', E[0] && E[0].closed ? E[0] : null);
+  $('#estRow').hidden = !(E[0] && E[0].closed);
+  line('#cycTxt', '#cycSub', cycle);
   const card = e => '<article class="est stock' + (e.next ? ' next' : '') + '">'
-    + '<p class="label">' + (e.next ? 'Next paycheque' : 'Pay period so far') + '</p>'
+    + '<p class="label">' + (e.closed ? 'Next paycheque' : 'This pay cycle so far') + '</p>'
     + '<p class="est-pay">Paid ' + (e.payEst ? 'around ' : '') + esc(shortDate(e.pay, true)) + ' <span class="muted">· ' + esc(inDays(dayDiff(today, e.pay))) + '</span></p>'
     + '<p class="est-span">' + esc(span(e)) + (e.closed ? ' · period closed' : ' · day ' + e.dayN + ' of ' + e.len) + '</p>'
     + (e.missing ? '<p class="loading-line">Loading older weeks from Workday…</p>'
