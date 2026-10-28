@@ -53,6 +53,10 @@ body.is-login .banner{display:none}
 .today-warn li.info{border-left-color:var(--break);background:var(--break-wash)}
 .seg.adj{opacity:.55;outline:1.5px dashed var(--fg);outline-offset:-1.5px}
 .tape small{color:var(--muted);font-size:11px}
+.brk-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
+.brk-line .filter button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.alt-finish{margin:0;font-size:13.5px;color:var(--muted)}
+.alt-finish strong{color:var(--fg)}
 .clock{padding:14px 0 4px;border-bottom:1px dashed var(--rule)}
 .clock-btns{display:flex;flex-wrap:wrap;gap:10px}
 .clock-btn{flex:1 1 140px;min-height:48px;border:2px solid currentColor;border-radius:4px;background:var(--card);font-family:"Big Shoulders Display","Oswald","Arial Narrow",sans-serif;font-weight:800;font-size:19px;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px 8px;cursor:pointer;box-shadow:0 3px 0 currentColor}

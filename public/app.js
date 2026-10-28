@@ -39,7 +39,7 @@ let reduceMotion = false;
 try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
 /* ---------------- settings (this browser only) ---------------- */
-const DEFAULTS = {rate: null, unpaid: 1, target: 7.5, weekTarget: 37.5};
+const DEFAULTS = {rate: null, unpaid: 1, target: 7.5, weekTarget: 37.5, skipBreaks: false};
 let settings = Object.assign({}, DEFAULTS);
 try { Object.assign(settings, JSON.parse(localStorage.getItem('shiftcard-settings') || '{}')); } catch (e) {}
 function saveSettings() { try { localStorage.setItem('shiftcard-settings', JSON.stringify(settings)); } catch (e) {} }
@@ -300,13 +300,17 @@ function liveToday() {
   else if (last || m.outs.length) { status = 'out'; since = Math.max(last ? last.end : 0, ...m.outs.map(o => o.end)); }
   const onClock = m.onBlocks + (m.open ? Math.max(0, now.min - m.open.start) : 0);
   const target = settings.target * 60;
-  const unpaid = (m.hasDeduct ? m.unpaid : settings.unpaid) * 60;
+  // Unpaid break time still to come: Workday's posted deductions once they exist, otherwise the
+  // Settings estimate, or none when breaks are skipped to leave early
+  const planned = skip => (m.hasDeduct ? m.unpaid : skip ? 0 : settings.unpaid) * 60;
+  const unpaid = planned(settings.skipBreaks);
   const clockTarget = target + unpaid;
+  const altRemaining = target + planned(!settings.skipBreaks) - onClock;
   let paid = clockTarget > 0 ? onClock * target / clockTarget : 0;
   if (status === 'out' && m.total > 0 && !adjusted) paid = m.total * 60;
   const remaining = clockTarget - onClock;
   const first = m.blocks.length ? m.blocks[0].start : (m.open ? m.open.start : null);
-  return {now, week, m, status, since, onClock, paid, target, unpaid, clockTarget, remaining, first, last, realFirst, adjStart, adjusted};
+  return {now, week, m, status, since, onClock, paid, target, unpaid, clockTarget, remaining, altRemaining, first, last, realFirst, adjStart, adjusted};
 }
 
 /* ---------------- home ---------------- */
@@ -382,6 +386,7 @@ function tick() {
   else if (over) fl.innerHTML = 'Reached ' + settings.target + ' h at <strong>' + esc(fmtMin(now.min + L.remaining)) + '</strong> <span class="muted">· anything after is extra time</span>';
   else if (live) fl.innerHTML = 'Done at <strong>' + esc(fmtMin(now.min + L.remaining)) + '</strong>' + unpaidNote;
   else fl.innerHTML = 'Done at <strong>' + esc(fmtMin(now.min + L.remaining)) + '</strong> <span class="muted">if you check back in now · ' + (L.status === 'meal' ? 'meal' : 'break') + ' running ' + esc(hm(now.min - L.since)) + '</span>';
+  renderBreakMode(L, now, over);
 
   // punches
   const q = L.paid / 15;
@@ -403,6 +408,29 @@ function tick() {
   renderClock(L);
   renderTodayWarnings(L);
 }
+
+/* ---------------- breaks: take them or skip to leave early ---------------- */
+function renderBreakMode(L, now, over) {
+  $$('#brkMode button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.brk === 'skip') === !!settings.skipBreaks)));
+  const alt = $('#altFinish');
+  // The two modes only differ while breaks are still a plan, not once Workday has posted them
+  const differs = !L.m.hasDeduct && settings.unpaid > 0;
+  const going = L.status === 'in' || L.status === 'break' || L.status === 'meal' || L.status === 'none';
+  if (!differs || !going || over) { alt.hidden = true; $('#brkMode').hidden = !differs || L.status === 'out'; return; }
+  $('#brkMode').hidden = false;
+  const altEnd = now.min + L.altRemaining;
+  setHTML(alt, settings.skipBreaks
+    ? 'Taking your ' + esc(hm(settings.unpaid * 60)) + ' of breaks: done at <strong>' + esc(fmtMin(altEnd)) + '</strong>'
+    : 'Skipping breaks to leave early: done at <strong>' + esc(fmtMin(altEnd)) + '</strong>');
+  alt.hidden = false;
+}
+$('#brkMode').addEventListener('click', e => {
+  const b = e.target.closest('button[data-brk]');
+  if (!b) return;
+  settings.skipBreaks = b.dataset.brk === 'skip';
+  saveSettings();
+  tick();
+});
 
 /* ---------------- time clock ---------------- */
 const CLOCK = {

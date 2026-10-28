@@ -119,6 +119,13 @@
           <div class="countdown stopped" id="countdown" aria-hidden="true"></div>
           <p class="sr" id="countSr"></p>
           <p class="finish" id="finishLine"></p>
+          <div class="brk-line">
+            <div class="filter" id="brkMode" role="group" aria-label="Breaks" hidden>
+              <button type="button" data-brk="take" aria-pressed="true">Take breaks</button>
+              <button type="button" data-brk="skip" aria-pressed="false">Skip, leave early</button>
+            </div>
+            <p class="alt-finish" id="altFinish" hidden></p>
+          </div>
         </div>
 
         <div class="punches" id="punches" role="img" aria-label="Progress toward 7.5 hours"></div>
