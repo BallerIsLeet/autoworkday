@@ -91,3 +91,7 @@ body.is-login .banner{display:none}
 .est-rows div.net dd{color:var(--ink)}
 .est-note{margin:12px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
 .est-note strong{color:var(--fg)}
+.cyc-meta{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.register.cycle .amt{color:var(--ink)}
+.register.cycle .amt.unset{font-size:clamp(30px,5vw,40px);color:var(--muted)}
+.punchlog + .today-warn{margin-top:18px}

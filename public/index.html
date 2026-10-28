@@ -112,8 +112,6 @@
           <p class="clock-msg" id="clockMsg" role="status" aria-live="polite"></p>
         </div>
 
-        <ul class="today-warn" id="todayWarn" aria-label="Warnings for today" hidden></ul>
-
         <div class="count-wrap">
           <p class="label" id="countLabel">Left until 7.5 hours paid</p>
           <div class="countdown stopped" id="countdown" aria-hidden="true"></div>
@@ -149,6 +147,8 @@
         </div>
 
         <table class="punchlog" aria-label="Today's punches"><tbody id="punchlog"></tbody></table>
+
+        <ul class="today-warn" id="todayWarn" aria-label="Warnings for today" hidden></ul>
       </article>
 
       <div class="side">
@@ -166,6 +166,20 @@
           <p class="note" id="moneyNote"></p>
         </section>
 
+        <section class="register cycle stock" aria-labelledby="h-cyc">
+          <h3 id="h-cyc">This pay cycle</h3>
+          <p class="cyc-meta" id="cycMeta"></p>
+          <div class="amt" id="cycTxt" aria-hidden="true">—</div>
+          <p class="sr" id="cycSr"></p>
+          <div class="tape">
+            <span>Paid hours so far</span><span id="cycHrs">—</span>
+            <span>= Before deductions</span><span id="cycGross">—</span>
+            <span>= Take-home so far (est.)</span><span id="cycNet">—</span>
+            <span>Projected cheque</span><span id="cycProj">—</span>
+          </div>
+          <p class="note" id="cycSub"></p>
+        </section>
+
         <section class="summary stock" aria-labelledby="h-sum">
           <h3 id="h-sum">This week &amp; pay</h3>
           <dl>
@@ -181,10 +195,6 @@
             <div class="srow" id="estRow">
               <dt>Next paycheque, est.</dt><dd id="estTxt">—</dd>
               <p class="sub" id="estSub"></p>
-            </div>
-            <div class="srow">
-              <dt>This pay cycle so far</dt><dd id="cycTxt">—</dd>
-              <p class="sub" id="cycSub"></p>
             </div>
             <div class="srow">
               <dt>Last net pay</dt><dd id="lastNetTxt">—</dd>

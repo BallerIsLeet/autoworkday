@@ -255,9 +255,18 @@ function dayModel(week, date) {
   const lastEnd = blocks.length ? blocks[blocks.length - 1].end : -1;
   // Workday sometimes leaves a check-in and its check-out unpaired; a later check-out still closes it
   const open = ins.filter(i => i.start >= lastEnd && !outs.some(o => o.end >= i.start)).pop() || null;
+  // Pair those loose check-ins with the next check-out; check-outs left over are stray, and
+  // one within 5 minutes of the check-out before it is just a double tap
+  const loose = ins.filter(i => i !== open);
+  const pairs = [], stray = [];
+  outs.forEach((o, k) => {
+    const j = loose.findIndex(i => i.start <= o.end);
+    if (j >= 0) pairs.push({start: loose.splice(j, 1)[0].start, end: o.end});
+    else stray.push({end: o.end, dup: k > 0 && o.end - outs[k - 1].end <= 5 ? outs[k - 1].end : null});
+  });
   const day = week.days.find(d => d.date === date);
   return {
-    date, es, blocks, ins, outs, deduct, open,
+    date, es, blocks, ins, outs, deduct, open, pairs, stray, lone: loose,
     unpaid: deduct.filter(d => !d.paid).reduce((a, d) => a + Math.abs(d.hours || 0), 0),
     hasDeduct: deduct.length > 0,
     hasMeal: deduct.some(d => /meal/i.test(d.type)) || blocks.some(b => /meal|lunch/i.test(b.reason || '')),
@@ -563,7 +572,9 @@ function renderTodayWarnings(L) {
         items.push('<b>Late first check-in</b>You checked in at ' + esc(fmtMin(L.realFirst)) + ', ' + esc(hm(L.realFirst - usual)) + ' after your usual start (' + esc(fmtMin(usual)) + '). If you forgot to clock in, submit a time correction in Workday, and use <button type="button" class="adj-btn" data-adjust>Adjust</button> to see your real end time here.');
       }
     }
-    L.m.outs.forEach(o => items.push('<b>Check-out with no check-in</b>Workday has a check-out at ' + esc(fmtMin(o.end)) + ' today with nothing before it.'));
+    L.m.stray.forEach(o => items.push(o.dup != null
+      ? {info: true, html: '<b>Extra check-out at ' + esc(fmtMin(o.end)) + '</b>It came right after your ' + esc(fmtMin(o.dup)) + ' check-out, probably a double tap. Your hours aren\'t affected; ask your manager to remove it if Workday flags it.'}
+      : '<b>Check-out with no check-in</b>Workday has a check-out at ' + esc(fmtMin(o.end)) + ' today with nothing before it.'));
     if ((L.status === 'break' || L.status === 'meal') && L.now.min - L.since > (L.status === 'meal' ? 60 : 30)) {
       items.push('<b>Long ' + L.status + '</b>Your ' + L.status + ' has been running for ' + esc(hm(L.now.min - L.since)) + '. Check back in when you\'re back.');
     }
@@ -641,7 +652,11 @@ function renderPunchLog(L) {
   const onlyAdj = L.m.blocks.length === 1 && L.m.blocks[0].adjusted;
   if (L.m.open) rows.push(onlyAdj ? ['Workday in', fmtMin(L.m.open.start), 'Check-in Workday has', false]
     : [L.m.blocks.length ? 'Back' : 'In', fmtMin(L.m.open.start), L.m.blocks.length ? 'Checked back in' : 'Start of shift', false]);
-  L.m.outs.forEach(o => rows.push(['Out', fmtMin(o.end), 'No matching check-in', false]));
+  L.m.pairs.forEach(p => {
+    rows.push(['Back', fmtMin(p.start), 'Check-in Workday left unpaired', false]);
+    rows.push(['Out', fmtMin(p.end), p.end - p.start < 1 ? 'Right after checking in' : hm(p.end - p.start) + ' after checking in', false]);
+  });
+  L.m.stray.forEach(o => rows.push(['Out', fmtMin(o.end), o.dup != null ? 'Extra check-out, double tap' : 'No matching check-in', false]));
   if ((L.status === 'in' || L.status === 'break' || L.status === 'meal') && L.remaining > 0) rows.push(['Out (est.)', fmtMin(L.now.min + L.remaining), 'at ' + settings.target + ' paid h', true]);
   $('#punchlog').innerHTML = rows.length
     ? rows.map(r => '<tr' + (r[3] ? ' class="proj"' : '') + '><td>' + esc(r[0]) + '</td><td class="t">' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td></tr>').join('')
@@ -810,8 +825,9 @@ function renderEstimate(L) {
   const grid = $('#estGrid');
   if (!grid) return;
   if (!R || !state.pay) {
-    $('#estTxt').textContent = $('#cycTxt').textContent = state.payLoading ? '…' : '—';
-    $('#estSub').textContent = $('#cycSub').textContent = '';
+    $('#estTxt').textContent = state.payLoading ? '…' : '—';
+    $('#estSub').textContent = '';
+    renderCycle(null, L, R, kept);
     setHTML(grid, '<p class="loading-line">' + (state.payLoading ? 'Loading your payslips…' : 'Needs an hourly rate.') + '</p>');
     setHTML($('#estNote'), '');
     return;
@@ -829,7 +845,7 @@ function renderEstimate(L) {
   const cycle = E.find(e => !e.closed) || null;
   line('#estTxt', '#estSub', E[0] && E[0].closed ? E[0] : null);
   $('#estRow').hidden = !(E[0] && E[0].closed);
-  line('#cycTxt', '#cycSub', cycle);
+  renderCycle(cycle, L, R, kept);
   const card = e => '<article class="est stock' + (e.next ? ' next' : '') + '">'
     + '<p class="label">' + (e.closed ? 'Next paycheque' : 'This pay cycle so far') + '</p>'
     + '<p class="est-pay">Paid ' + (e.payEst ? 'around ' : '') + esc(shortDate(e.pay, true)) + ' <span class="muted">· ' + esc(inDays(dayDiff(today, e.pay))) + '</span></p>'
@@ -849,6 +865,44 @@ function renderEstimate(L) {
   setHTML($('#estNote'), 'Paid hours × your rate' + (kept != null ? ', minus the share your last payslip deducted' : '') + '. Shift premiums, stat pay and allowances aren\'t included, so the real cheque can be a little higher.'
     + (L && L.adjusted ? ' Today counts from your actual start, ' + esc(fmtMin(L.adjStart)) : '')
     + odd.map(o => ' <strong>' + esc(shortDate(o.date, true)) + '</strong> shows ' + hrs(o.h) + ' h in Workday. If that\'s a mis-paired punch, this drops by about ' + esc(money(Math.max(0, o.h - settings.target) * R.rate)) + ' gross once it\'s fixed.').join(''));
+}
+
+// Weekdays after today up to the end of the cycle
+function weekdaysLeft(from, to) {
+  let n = 0;
+  for (let d = addDays(from, 1); d <= to; d = addDays(d, 1)) { const w = isoParts(d).dow; if (w > 0 && w < 6) n++; }
+  return n;
+}
+
+// Side card: what the cycle you're working in has earned so far, and where it's headed
+function renderCycle(e, L, R, kept) {
+  const big = $('#cycTxt');
+  const set = (s, v) => { $(s).textContent = v; };
+  if (!e || e.missing || !R) {
+    big.className = 'amt unset';
+    big.textContent = state.payLoading || (e && e.missing) ? 'Loading…' : '—';
+    ['#cycHrs', '#cycGross', '#cycNet', '#cycProj'].forEach(s => set(s, '—'));
+    set('#cycMeta', ''); set('#cycSr', ''); setHTML($('#cycSub'), '');
+    return;
+  }
+  const today = nowTZ().date;
+  const k = kept != null ? kept : 1;
+  // Rest of today up to the daily target if you're still working, then a full day each weekday left
+  const live = L && (L.status === 'in' || L.status === 'break' || L.status === 'meal');
+  const todayLeft = live ? Math.max(0, L.target - L.paid) / 60 : (!L || L.status === 'none') && isoParts(today).dow % 6 ? settings.target : 0;
+  const days = weekdaysLeft(today, e.to);
+  const projH = e.hours + todayLeft + days * settings.target;
+  const net = e.gross * k, projNet = projH * R.rate * k;
+  const cents = Math.round(net * 100);
+  big.className = 'amt';
+  big.innerHTML = '<span class="cur">$</span>' + Math.floor(cents / 100).toLocaleString('en-CA') + '.' + pad(cents % 100);
+  set('#cycMeta', shortDate(e.from) + ' – ' + shortDate(e.to) + ' · paid ' + (e.payEst ? 'around ' : '') + shortDate(e.pay, true) + ', ' + inDays(dayDiff(today, e.pay)));
+  set('#cycSr', 'This pay cycle so far: ' + money(net) + (kept != null ? ' take-home, estimated' : ' before deductions'));
+  set('#cycHrs', hrs(e.hours) + ' h');
+  set('#cycGross', money(e.gross));
+  set('#cycNet', kept != null ? money(net) : '—');
+  set('#cycProj', '~' + money(projNet));
+  setHTML($('#cycSub'), 'Projected if you work ' + esc(settings.target) + ' paid hours ' + (days ? 'on each of the ' + days + ' weekday' + (days > 1 ? 's' : '') + ' left' : '') + (todayLeft && days ? ' and finish today' : todayLeft ? 'to finish today' : '') + ' (' + esc(hrs(projH)) + ' h' + (kept != null ? ', take-home' : '') + '). Day ' + e.dayN + ' of ' + e.len + '. <a href="#payslips">Details</a>');
 }
 
 /* settings inputs */
@@ -906,7 +960,9 @@ function computeFlags() {
     const m = dayModel(w, d.date);
     if (!m.es.some(e => e.kind !== 'payday')) return;
     const last = m.blocks[m.blocks.length - 1];
-    m.outs.forEach(o => {
+    m.pairs.forEach(p => out.push({sev: 'med', date: d.date, wi, what: 'Check-in and check-out not paired', why: 'Workday left the check-in at ' + fmtMin(p.start) + ' and the check-out at ' + fmtMin(p.end) + ' unmatched. Ask your manager to pair them if that time should count.'}));
+    m.stray.filter(o => o.dup != null).forEach(o => out.push({sev: 'low', date: d.date, wi, what: 'Extra check-out', why: 'A second check-out at ' + fmtMin(o.end) + ', right after the one at ' + fmtMin(o.dup) + '. Probably a double tap.'}));
+    m.stray.filter(o => o.dup == null).forEach(o => {
       const before = m.blocks.filter(b => b.end <= o.end).pop();
       const resumed = before && m.blocks.some(b => b.start >= before.end && b.start < o.end);
       const tail = before && !resumed && (isBreakReason(before.reason) || isMealReason(before.reason))
@@ -914,7 +970,7 @@ function computeFlags() {
         : '';
       out.push({sev: 'high', date: d.date, wi, what: 'Check-out with no check-in', why: 'Checked out at ' + fmtMin(o.end) + ' with no matching check-in.' + tail});
     });
-    m.ins.forEach(i => out.push({sev: 'high', date: d.date, wi, what: 'Check-in with no check-out', why: 'Checked in at ' + fmtMin(i.start) + ' and never checked out. Add the clock-out in Workday.'}));
+    m.lone.concat(m.open ? [m.open] : []).forEach(i => out.push({sev: 'high', date: d.date, wi, what: 'Check-in with no check-out', why: 'Checked in at ' + fmtMin(i.start) + ' and never checked out. Add the clock-out in Workday.'}));
     m.blocks.filter(b => b.end - b.start > 720).forEach(b => out.push({sev: 'high', date: d.date, wi, what: b.end >= 1440 ? 'Punch runs overnight' : 'Punch over 12 hours', why: 'Worked time from ' + fmtMin(b.start) + ' to ' + fmtEnd(b.end) + ' (' + hm(b.end - b.start) + ') is on your card. A check-out is probably missing; fix it in Workday.'}));
     if (last && last.end - last.start <= 720 && (isBreakReason(last.reason) || isMealReason(last.reason)) && !m.outs.some(o => o.end >= last.end) && !m.ins.some(i => i.start >= last.end)) {
       out.push({sev: 'high', date: d.date, wi, what: 'No return from ' + (isMealReason(last.reason) ? 'meal' : 'break'), why: 'Went on ' + last.reason.toLowerCase() + ' at ' + fmtMin(last.end) + ' with no punch after it. Add the return and clock-out in Workday.'});
