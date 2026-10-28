@@ -77,3 +77,17 @@ body.is-login .banner{display:none}
 .today-warn li b{display:block;font-size:14px}
 .today-warn a{color:var(--ink);font-weight:600}
 .when-today{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:11px;color:var(--meal);margin-left:6px;letter-spacing:.06em;text-transform:uppercase}
+.est-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:20px}
+.est{padding:18px 22px}
+.est.next{border-top:4px solid var(--ink)}
+.est-pay{margin:6px 0 0;font-weight:700;font-size:17px}
+.est-span{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.est-amt{display:block;margin:12px 0 10px;font-family:"Big Shoulders Display","Oswald","Arial Narrow",sans-serif;font-weight:800;font-size:clamp(34px,6vw,46px);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.est-rows{margin:0}
+.est-rows div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--rule);font-size:14px}
+.est-rows dt{color:var(--muted)}
+.est-rows dd{margin:0;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-weight:600}
+.est-rows div.net{border-top:2px solid var(--fg)}
+.est-rows div.net dd{color:var(--ink)}
+.est-note{margin:12px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+.est-note strong{color:var(--fg)}

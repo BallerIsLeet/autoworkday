@@ -242,6 +242,7 @@ async function ensurePay() {
   try { state.pay = await api('/api/pay'); }
   catch (err) { state.payError = err.message; }
   finally { state.payLoading = false; renderPay(); tick(); }
+  ensureWeeks(4);
 }
 
 /* ---------------- day model ---------------- */
@@ -252,7 +253,8 @@ function dayModel(week, date) {
   const outs = es.filter(e => e.kind === 'out' && e.end != null).sort((a, b) => a.end - b.end);
   const deduct = es.filter(e => e.kind === 'deduct');
   const lastEnd = blocks.length ? blocks[blocks.length - 1].end : -1;
-  const open = ins.filter(i => i.start >= lastEnd).pop() || null;
+  // Workday sometimes leaves a check-in and its check-out unpaired; a later check-out still closes it
+  const open = ins.filter(i => i.start >= lastEnd && !outs.some(o => o.end >= i.start)).pop() || null;
   const day = week.days.find(d => d.date === date);
   return {
     date, es, blocks, ins, outs, deduct, open,
@@ -348,7 +350,7 @@ function tick() {
     const ago = Math.floor((Date.now() - state.updatedAt) / 60000);
     $('#syncTxt').textContent = 'From Workday ' + (ago < 1 ? 'just now' : ago + ' min ago');
   }
-  if (!L) { renderMoney(null); renderSummary(null); return; }
+  if (!L) { renderMoney(null); renderSummary(null); renderEstimate(null); return; }
 
   // stamp
   const st = STAMP[L.status];
@@ -405,6 +407,7 @@ function tick() {
   renderTimeline(L);
   renderMoney(L);
   renderSummary(L);
+  renderEstimate(L);
   renderClock(L);
   renderTodayWarnings(L);
 }
@@ -665,10 +668,14 @@ function renderMoney(L) {
   const kept = keptRatio();
   $('#tapeHrs').textContent = paidH.toFixed(3) + ' h';
   const P = state.pay && state.pay.latest;
-  $('#setRate').placeholder = P && P.rate > 0 ? P.rate.toFixed(2) : '0.00';
-  $('#rateHelp').textContent = P && P.rate > 0
-    ? 'Leave blank to use $' + P.rate.toFixed(2) + ' from your ' + shortDate(P.date) + ' payslip'
-    : 'Leave blank to use the rate on your latest payslip';
+  const rateEl = $('#setRate');
+  rateEl.placeholder = P && P.rate > 0 ? P.rate.toFixed(2) : '0.00';
+  if (settings.rate == null && P && P.rate > 0 && document.activeElement !== rateEl) rateEl.value = P.rate.toFixed(2);
+  setHTML($('#rateHelp'), P && P.rate > 0
+    ? (settings.rate == null
+      ? 'Set automatically from your ' + esc(shortDate(P.date)) + ' payslip'
+      : 'Your own rate · <button type="button" class="adj-btn" id="rateAuto">Use $' + P.rate.toFixed(2) + ' from your payslip</button>')
+    : 'Filled in from your latest payslip once it loads');
   if (!R) {
     big.className = 'amt unset';
     big.textContent = state.payLoading ? 'Loading pay…' : 'Set your rate';
@@ -736,6 +743,103 @@ function renderSummary(L) {
   setHTML($('#lastNetSub'), last ? 'Paid ' + esc(shortDate(last.date)) + ' · <a href="#payslips">See payslips</a>' : (state.payError ? esc(state.payError) : '<a href="#payslips">See payslips</a>'));
 }
 
+/* ---------------- paycheque estimate ---------------- */
+function addDays(iso, n) { const p = isoParts(iso); return new Date(Date.UTC(p.y, p.m - 1, p.d + n)).toISOString().slice(0, 10); }
+function weekFor(date) { return state.weeks.find(w => w && w.days.some(d => d.date === date)); }
+// Paid hours for a day: Workday's total, or its punches until it totals the day; today is the live count
+function paidHours(date, L) {
+  if (L && date === L.now.date) return L.paid / 60;
+  const w = weekFor(date);
+  if (!w) return null;
+  const day = w.days.find(d => d.date === date);
+  if (day.total > 0) return day.total;
+  const m = dayModel(w, date);
+  return Math.max(0, m.onBlocks / 60 - m.unpaid);
+}
+
+// The period on the next paycheque and, once that one has closed, the period running now
+function payPeriods() {
+  const P = state.pay;
+  if (!P) return [];
+  const today = nowTZ().date;
+  const lastP = P.history[P.history.length - 1];
+  const len = lastP ? dayDiff(lastP.from, lastP.to) + 1 : 15;
+  const entry = state.weeks.flatMap(w => w ? w.entries : []).find(e => e.kind === 'payday' && e.date >= today);
+  const span = entry && /(\d{4}-\d\d-\d\d)\s*-\s*(\d{4}-\d\d-\d\d)/.exec(entry.note || '');
+  const from = span ? span[1] : lastP ? addDays(lastP.to, 1) : null;
+  if (!from) return [];
+  const to = span ? span[2] : addDays(from, len - 1);
+  const pay = P.nextPayDate || (entry && entry.date) || addDays(to, 7);
+  const lag = dayDiff(to, pay);
+  const out = [{from, to, pay, next: true}];
+  if (today > to) {
+    const f = addDays(to, 1), t = addDays(f, len - 1);
+    // Workday hasn't posted this pay date yet: same gap as the last one, pulled back off a weekend
+    let est = addDays(t, lag);
+    const dow = isoParts(est).dow;
+    if (dow === 6) est = addDays(est, -1); else if (dow === 0) est = addDays(est, -2);
+    out.push({from: f, to: t, pay: est, payEst: true});
+  }
+  return out;
+}
+
+function estimatePeriod(per, L, R, kept) {
+  const today = nowTZ().date;
+  let hours = 0, missing = false;
+  const odd = [];
+  for (let d = per.from; d <= per.to && d <= today; d = addDays(d, 1)) {
+    const h = paidHours(d, L);
+    if (h == null) { missing = true; continue; }
+    hours += h;
+    if (h > settings.target + 3) odd.push({date: d, h});
+  }
+  const gross = hours * R.rate;
+  const len = dayDiff(per.from, per.to) + 1;
+  return Object.assign({}, per, {hours, missing, odd, gross, net: kept != null ? gross * kept : null, closed: today > per.to, dayN: Math.min(dayDiff(per.from, today) + 1, len), len});
+}
+
+function renderEstimate(L) {
+  const R = payRate();
+  const kept = keptRatio();
+  const grid = $('#estGrid');
+  if (!R || !state.pay) {
+    $('#estTxt').textContent = state.payLoading ? '…' : '—';
+    $('#estSub').textContent = '';
+    setHTML(grid, '<p class="loading-line">' + (state.payLoading ? 'Loading your payslips…' : 'Needs an hourly rate.') + '</p>');
+    setHTML($('#estNote'), '');
+    return;
+  }
+  const today = nowTZ().date;
+  const E = payPeriods().map(p => estimatePeriod(p, L, R, kept));
+  const span = e => shortDate(e.from) + ' – ' + shortDate(e.to);
+  const take = e => e.net != null ? e.net : e.gross;
+  const first = E[0];
+  if (first) {
+    $('#estTxt').textContent = first.missing ? '…' : money(take(first));
+    $('#estSub').textContent = first.missing ? 'Loading older weeks…'
+      : hrs(first.hours) + ' h · ' + span(first) + (first.closed ? '' : ' so far') + (kept != null ? ' · take-home' : ' · before deductions');
+  }
+  const card = e => '<article class="est stock' + (e.next ? ' next' : '') + '">'
+    + '<p class="label">' + (e.next ? 'Next paycheque' : 'Pay period so far') + '</p>'
+    + '<p class="est-pay">Paid ' + (e.payEst ? 'around ' : '') + esc(shortDate(e.pay, true)) + ' <span class="muted">· ' + esc(inDays(dayDiff(today, e.pay))) + '</span></p>'
+    + '<p class="est-span">' + esc(span(e)) + (e.closed ? ' · period closed' : ' · day ' + e.dayN + ' of ' + e.len) + '</p>'
+    + (e.missing ? '<p class="loading-line">Loading older weeks from Workday…</p>'
+      : '<b class="est-amt">' + money(take(e)) + '</b>'
+      + '<dl class="est-rows">'
+      + '<div><dt>Paid hours</dt><dd>' + hrs(e.hours) + ' h</dd></div>'
+      + '<div><dt>Rate</dt><dd>' + money(R.rate) + ' / h</dd></div>'
+      + '<div><dt>Gross</dt><dd>' + money(e.gross) + '</dd></div>'
+      + (kept != null ? '<div><dt>Deductions (' + (100 - kept * 100).toFixed(1) + '%)</dt><dd>−' + money(e.gross - e.net) + '</dd></div>'
+        + '<div class="net"><dt>Take-home</dt><dd>' + money(e.net) + '</dd></div>' : '')
+      + '</dl>')
+    + '</article>';
+  setHTML(grid, E.map(card).join(''));
+  const odd = E.flatMap(e => e.missing ? [] : e.odd);
+  setHTML($('#estNote'), 'Paid hours × your rate' + (kept != null ? ', minus the share your last payslip deducted' : '') + '. Shift premiums, stat pay and allowances aren\'t included, so the real cheque can be a little higher.'
+    + (L && L.adjusted ? ' Today counts from your actual start, ' + esc(fmtMin(L.adjStart)) : '')
+    + odd.map(o => ' <strong>' + esc(shortDate(o.date, true)) + '</strong> shows ' + hrs(o.h) + ' h in Workday. If that\'s a mis-paired punch, this drops by about ' + esc(money(Math.max(0, o.h - settings.target) * R.rate)) + ' gross once it\'s fixed.').join(''));
+}
+
 /* settings inputs */
 const SET_FIELDS = [['#setRate', 'rate', true], ['#setUnpaid', 'unpaid'], ['#setTarget', 'target'], ['#setWeek', 'weekTarget']];
 SET_FIELDS.forEach(([sel, key, nullable]) => {
@@ -743,13 +847,24 @@ SET_FIELDS.forEach(([sel, key, nullable]) => {
   el.value = settings[key] == null ? '' : settings[key];
   el.addEventListener('change', () => {
     const v = el.value.trim() === '' ? null : Number(el.value);
+    const P = state.pay && state.pay.latest;
     if (v == null && nullable) settings[key] = null;
     else if (v != null && isFinite(v) && v >= Number(el.min) && v <= Number(el.max)) settings[key] = v;
+    // Typing the payslip rate back in means "automatic" again
+    if (key === 'rate' && settings.rate != null && P && Math.abs(settings.rate - P.rate) < 0.005) settings.rate = null;
     el.value = settings[key] == null ? '' : settings[key];
     saveSettings();
     tick();
     renderTimings();
   });
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest || !e.target.closest('#rateAuto')) return;
+  e.preventDefault();
+  settings.rate = null; saveSettings();
+  $('#setRate').value = '';
+  tick(); renderTimings();
 });
 
 /* ---------------- timings ---------------- */

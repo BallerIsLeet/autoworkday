@@ -179,6 +179,10 @@
               <p class="sub" id="payIn"></p>
             </div>
             <div class="srow">
+              <dt>Next paycheque, est.</dt><dd id="estTxt">—</dd>
+              <p class="sub" id="estSub"></p>
+            </div>
+            <div class="srow">
               <dt>Last net pay</dt><dd id="lastNetTxt">—</dd>
               <p class="sub" id="lastNetSub"><a href="#payslips">See payslips</a></p>
             </div>
@@ -271,6 +275,12 @@
           <div class="split-cap"><span id="splitKept"></span><span id="splitDed"></span></div>
         </section>
       </div>
+
+      <section class="sec" aria-labelledby="h-est">
+        <h2 id="h-est">Paycheque estimate</h2>
+        <div class="est-grid" id="estGrid"></div>
+        <p class="est-note" id="estNote"></p>
+      </section>
 
       <section class="sec" aria-labelledby="h-recent">
         <h2 id="h-recent">Recent payslips</h2>
