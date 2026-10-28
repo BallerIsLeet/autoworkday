@@ -802,6 +802,7 @@ function renderEstimate(L) {
   const R = payRate();
   const kept = keptRatio();
   const grid = $('#estGrid');
+  if (!grid) return;
   if (!R || !state.pay) {
     $('#estTxt').textContent = state.payLoading ? '…' : '—';
     $('#estSub').textContent = '';
