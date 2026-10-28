@@ -95,3 +95,8 @@ body.is-login .banner{display:none}
 .register.cycle .amt{color:var(--ink)}
 .register.cycle .amt.unset{font-size:clamp(30px,5vw,40px);color:var(--muted)}
 .punchlog + .today-warn{margin-top:18px}
+.disclaim{margin-top:16px;padding:12px 14px;border:1.5px solid var(--rule);border-left:4px solid var(--ink);background:var(--card);font-size:12.5px;line-height:1.5;color:var(--muted)}
+.disclaim p{margin:0}
+.disclaim p + p{margin-top:8px}
+.disclaim b{color:var(--fg)}
+.disclaim a{color:var(--ink);font-weight:600}

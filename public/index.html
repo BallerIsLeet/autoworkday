@@ -18,7 +18,7 @@
   <header class="topbar">
     <a class="brand" href="#home" aria-label="Shift Card, home">
       <svg width="34" height="26" viewBox="0 0 34 26" aria-hidden="true"><path d="M6 1h27v24H1V6z" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><rect x="8" y="6" width="3" height="5"/><rect x="14" y="13" width="3" height="5"/><rect x="20" y="6" width="3" height="5"/><rect x="26" y="15" width="3" height="5"/><rect x="8" y="16" width="3" height="5"/></g></svg>
-      <span><b>Shift Card</b><small id="brandSub">Bill Gosling Outsourcing · Workday</small></span>
+      <span><b>Shift Card</b><small id="brandSub">Unofficial · open source</small></span>
     </a>
     <nav class="tabs" aria-label="Main">
       <a class="tab" href="#home" data-nav="home">Home</a>
@@ -42,7 +42,7 @@
         <form class="card stock cut" id="loginForm" novalidate>
           <div class="rail">
             <svg width="40" height="30" viewBox="0 0 34 26" aria-hidden="true" class="ink"><path d="M6 1h27v24H1V6z" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><rect x="8" y="6" width="3" height="5"/><rect x="14" y="13" width="3" height="5"/><rect x="20" y="6" width="3" height="5"/><rect x="26" y="15" width="3" height="5"/><rect x="8" y="16" width="3" height="5"/></g></svg>
-            <div class="tenant">Workday sign-in<br>Bill Gosling Outsourcing</div>
+            <div class="tenant">Unofficial app<br>Uses your Workday sign-in</div>
           </div>
           <h1 id="h-login" tabindex="-1">Punch in</h1>
           <p class="lede" id="loginLede">Sign in with your Workday account to see your hours and pay.</p>
@@ -60,6 +60,11 @@
           <button type="button" class="link-btn mfa-restart" id="mfaRestart" hidden>Use a different account</button>
           <p class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Everything is kept in one encrypted cookie in this browser that page scripts can't read. The Shift Card server only passes requests to Workday and keeps nothing: no password, no session, no hours. Signing out deletes the cookie.</span></p>
         </form>
+        <aside class="disclaim" aria-label="About Shift Card">
+          <p><b>Not affiliated with Workday or Bill Gosling.</b> Shift Card is an independent, open-source project. It isn't made, endorsed or supported by Workday, Inc. or Bill Gosling Outsourcing. Workday stays the official record of your time and pay.</p>
+          <p><b>We keep no data: 0 retention.</b> There's no database, no accounts and no analytics. The server forwards each request to Workday and keeps nothing afterward. Your sign-in lives only in an encrypted cookie in your browser, and signing out deletes it. Settings stay in this browser too.</p>
+          <p><a href="https://github.com/BallerIsLeet/autoworkday" rel="noopener" target="_blank">Read the source on GitHub</a></p>
+        </aside>
         <p class="foot">Trouble signing in? Reset your password in Workday itself.</p>
       </div>
     </div>
