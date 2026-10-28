@@ -1,8 +1,8 @@
 // The /api/* routes, shared by the local Bun server (server.ts) and the Vercel function (api/index.ts).
 import {
   clearPending, clearSession, readPending, readSession, writePending, writeSession,
-} from "./session";
-import { AuthError, Workday, WorkdayError, completeMfa, login, logout, relogin, type ClockAction, type Pending, type Session } from "./workday";
+} from "./session.js";
+import { AuthError, Workday, WorkdayError, completeMfa, login, logout, relogin, type ClockAction, type Pending, type Session } from "./workday.js";
 
 const CLOCK_ACTIONS: ClockAction[] = ["in", "break", "meal", "out"];
 

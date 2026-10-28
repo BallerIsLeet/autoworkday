@@ -1,5 +1,5 @@
-import { Jar, request, type Cookie } from "./jar";
-import { parsePayBatch, parsePayslip, parseWeek, previousWeekUri } from "./parse";
+import { Jar, request, type Cookie } from "./jar.js";
+import { parsePayBatch, parsePayslip, parseWeek, previousWeekUri } from "./parse.js";
 
 const HOST = process.env.WORKDAY_HOST ?? "https://wd5.myworkday.com";
 const IDENTITY = process.env.WORKDAY_IDENTITY_HOST ?? "https://wd5-identity.myworkday.com";
@@ -28,8 +28,12 @@ const SESSION_MS = 12 * 3600e3;
 export type Session = { c: Cookie[]; t: string; u: string; p?: string; r: boolean; exp: number };
 export type Pending = Session & { mfa: string };
 
-export class AuthError extends Error {}
-export class WorkdayError extends Error {}
+export class AuthError extends Error {
+  readonly kind = "auth";
+}
+export class WorkdayError extends Error {
+  readonly kind = "workday";
+}
 
 async function visit(jar: Jar, url: string) {
   const out = await request(jar, url);

@@ -1,6 +1,6 @@
 // Local server: `bun run server.ts`. On Vercel, api/index.ts serves /api/* and public/ is static.
 import { join, normalize, sep } from "node:path";
-import { SECURITY_HEADERS, api, fail } from "./src/app";
+import { SECURITY_HEADERS, api, fail } from "./src/app.js";
 
 const PUBLIC = join(import.meta.dir, "public");
 const PORT = Number(process.env.PORT ?? 3000);

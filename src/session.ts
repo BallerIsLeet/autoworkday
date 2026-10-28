@@ -8,7 +8,7 @@ let keyPromise: Promise<CryptoKey> | null = null;
 function key() {
   if (!keyPromise) {
     const secret = process.env.SESSION_SECRET;
-    let raw: Promise<ArrayBuffer> | Uint8Array;
+    let raw: Promise<ArrayBuffer> | Uint8Array<ArrayBuffer>;
     if (secret && secret.length >= 32) {
       raw = crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
     } else if (process.env.VERCEL) {

@@ -1,5 +1,5 @@
 // Vercel function for every /api/* route. vercel.json rewrites /api/<route> here as ?route=<route>.
-import { api, fail } from "../src/app";
+import { api, fail } from "../src/app.js";
 
 async function handle(req: Request) {
   const url = new URL(req.url);
