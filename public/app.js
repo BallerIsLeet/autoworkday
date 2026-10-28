@@ -80,23 +80,6 @@ function showBanner(msg, retry) { $('#bannerText').textContent = msg; retryFn = 
 function hideBanner() { $('#banner').hidden = true; }
 $('#bannerRetry').addEventListener('click', () => { hideBanner(); if (retryFn) retryFn(); });
 
-/* ---------------- theme ---------------- */
-const THEMES = ['auto', 'light', 'dark'];
-let theme = 'auto';
-try { theme = localStorage.getItem('shiftcard-theme') || 'auto'; } catch (e) {}
-function applyTheme() {
-  if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', theme);
-  $('#themeLabel').textContent = theme === 'auto' ? 'Auto' : theme === 'light' ? 'Day' : 'Night';
-  $('#themeBtn').setAttribute('aria-label', 'Theme: ' + (theme === 'auto' ? 'follow system' : theme) + '. Click to change.');
-}
-$('#themeBtn').addEventListener('click', () => {
-  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
-  try { localStorage.setItem('shiftcard-theme', theme); } catch (e) {}
-  applyTheme();
-});
-applyTheme();
-
 /* ---------------- routing ---------------- */
 const VIEWS = ['home', 'timings', 'payslips', 'login'];
 let firstRoute = true;
