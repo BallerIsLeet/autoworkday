@@ -1,0 +1,12 @@
+{
+  "name": "shift-card",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun --watch run server.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "1.2.13"
+  }
+}

@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shift Card</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 26'%3E%3Cpath d='M6 1h27v24H1V6z' fill='%23F2EAD3' stroke='%231E3D78' stroke-width='2'/%3E%3Cg fill='%231E3D78'%3E%3Crect x='8' y='6' width='3' height='5'/%3E%3Crect x='14' y='13' width='3' height='5'/%3E%3Crect x='20' y='6' width='3' height='5'/%3E%3Crect x='26' y='15' width='3' height='5'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/extra.css">
+<script src="/app.js" defer></script>
+</head>
+<body class="is-login">
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="Shift Card, home">
+      <svg width="34" height="26" viewBox="0 0 34 26" aria-hidden="true"><path d="M6 1h27v24H1V6z" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><rect x="8" y="6" width="3" height="5"/><rect x="14" y="13" width="3" height="5"/><rect x="20" y="6" width="3" height="5"/><rect x="26" y="15" width="3" height="5"/><rect x="8" y="16" width="3" height="5"/></g></svg>
+      <span><b>Shift Card</b><small id="brandSub">Bill Gosling Outsourcing · Workday</small></span>
+    </a>
+    <nav class="tabs" aria-label="Main">
+      <a class="tab" href="#home" data-nav="home">Home</a>
+      <a class="tab" href="#timings" data-nav="timings">Timings</a>
+      <a class="tab" href="#payslips" data-nav="payslips">Payslips</a>
+    </nav>
+    <div class="tools">
+      <button class="chip-btn" id="themeBtn" type="button" aria-label="Theme: follow system">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg><span class="t" id="themeLabel">Auto</span>
+      </button>
+      <button class="chip-btn" id="signoutBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span class="t">Sign out</span><span class="sr">Sign out</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" role="alert" hidden><span id="bannerText"></span><button type="button" class="link-btn" id="bannerRetry">Try again</button></div>
+
+  <main>
+  <!-- LOGIN -->
+  <section id="view-login" class="view" hidden aria-labelledby="h-login">
+    <div class="login-wrap">
+      <div class="login shadowed">
+        <form class="card stock cut" id="loginForm" novalidate>
+          <div class="rail">
+            <svg width="40" height="30" viewBox="0 0 34 26" aria-hidden="true" class="ink"><path d="M6 1h27v24H1V6z" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><rect x="8" y="6" width="3" height="5"/><rect x="14" y="13" width="3" height="5"/><rect x="20" y="6" width="3" height="5"/><rect x="26" y="15" width="3" height="5"/><rect x="8" y="16" width="3" height="5"/></g></svg>
+            <div class="tenant">Workday sign-in<br>Bill Gosling Outsourcing</div>
+          </div>
+          <h1 id="h-login" tabindex="-1">Punch in</h1>
+          <p class="lede" id="loginLede">Sign in with your Workday account to see your hours and pay.</p>
+          <p class="form-error" id="loginError" role="alert" hidden></p>
+          <div id="credFields">
+            <label class="field"><span>Work email</span><input id="email" type="email" name="email" autocomplete="username" placeholder="you@billgosling.com" inputmode="email" required></label>
+            <label class="field"><span>Password</span><input id="password" type="password" name="password" autocomplete="current-password" required></label>
+            <label class="switch"><input type="checkbox" id="remember" checked><span class="knob" aria-hidden="true"></span><span>Keep me signed in<small class="switch-sub">Saves your Workday email and password, encrypted, in this browser for 30 days so Shift Card can sign you back in when Workday's session ends.</small></span></label>
+          </div>
+          <div id="mfaFields" hidden>
+            <p class="mfa-note" id="mfaNote">Workday sent you a verification code.</p>
+            <label class="field"><span>Verification code</span><input id="mfaCode" name="code" inputmode="numeric" autocomplete="one-time-code"></label>
+          </div>
+          <button class="btn-primary" type="submit" id="signinBtn"><span class="holes" aria-hidden="true"><i></i><i></i><i></i></span><span id="signinText">Sign in</span></button>
+          <button type="button" class="link-btn mfa-restart" id="mfaRestart" hidden>Use a different account</button>
+          <p class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Everything is kept in one encrypted cookie in this browser that page scripts can't read. The Shift Card server only passes requests to Workday and keeps nothing: no password, no session, no hours. Signing out deletes the cookie.</span></p>
+        </form>
+        <p class="foot">Trouble signing in? Reset your password in Workday itself.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="view-home" class="view" hidden aria-labelledby="h-home">
+    <div class="view-head">
+      <div>
+        <p class="label kicker" id="todayLabel">Today · Eastern time</p>
+        <h1 id="h-home" tabindex="-1">Today's card</h1>
+      </div>
+      <div class="sync-line">
+        <span class="label" id="syncTxt" aria-live="polite">Loading from Workday…</span>
+        <button class="chip-btn" type="button" id="refreshBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg><span class="t">Refresh</span><span class="sr">Refresh from Workday</span></button>
+      </div>
+    </div>
+
+    <div class="home-grid">
+      <article class="timecard stock cut ledger-lines" aria-label="Today's time card">
+        <div class="tc-head">
+          <dl>
+            <dt>Name</dt><dd id="nameTxt">—</dd>
+            <dt>Group</dt><dd>Hourly Canada</dd>
+            <dt>Clock in</dt><dd><span class="mono" id="clockInTxt">—</span> <button type="button" class="adj-btn" id="adjBtn" aria-expanded="false" aria-controls="adjForm">Adjust</button></dd>
+          </dl>
+          <div id="statusStamp" class="stamp stamp-big st-out" role="status" aria-live="polite"><span><span class="word">Loading</span></span></div>
+        </div>
+
+        <form class="adj-form" id="adjForm" hidden>
+          <label for="adjInput">When did you actually start today?</label>
+          <div class="adj-row">
+            <input type="time" id="adjInput" step="60" required>
+            <button type="submit" class="link-btn">Use this time</button>
+            <button type="button" class="link-btn" id="adjClear" hidden>Clear</button>
+            <button type="button" class="link-btn" id="adjCancel">Cancel</button>
+          </div>
+          <p class="adj-help">Only changes what Shift Card shows in this browser, so your end time and pay are right until your manager fixes the punch. Nothing is sent to Workday.</p>
+          <p class="adj-err" id="adjErr" role="alert" hidden></p>
+        </form>
+
+        <div class="clock" role="group" aria-labelledby="h-clock">
+          <h3 id="h-clock" class="sr">Time clock</h3>
+          <div class="clock-btns" id="clockBtns">
+            <button type="button" class="clock-btn cb-in" data-clock="in" hidden><span class="t">Check in</span></button>
+            <button type="button" class="clock-btn cb-break" data-clock="break" hidden><span class="t">Start break</span></button>
+            <button type="button" class="clock-btn cb-meal" data-clock="meal" hidden><span class="t">Start meal</span></button>
+            <button type="button" class="clock-btn cb-out" data-clock="out" hidden><span class="t">Clock out</span></button>
+          </div>
+          <p class="clock-msg" id="clockMsg" role="status" aria-live="polite"></p>
+        </div>
+
+        <ul class="today-warn" id="todayWarn" aria-label="Warnings for today" hidden></ul>
+
+        <div class="count-wrap">
+          <p class="label" id="countLabel">Left until 7.5 hours paid</p>
+          <div class="countdown stopped" id="countdown" aria-hidden="true"></div>
+          <p class="sr" id="countSr"></p>
+          <p class="finish" id="finishLine"></p>
+        </div>
+
+        <div class="punches" id="punches" role="img" aria-label="Progress toward 7.5 hours"></div>
+        <div class="prog-meta">
+          <span>Paid so far <b class="mono" id="workedTxt">0:00:00</b> of <span id="targetTxt">7:30:00</span></span>
+          <span><b class="mono" id="pctTxt">0%</b> · each hole is 15 paid min</span>
+        </div>
+
+        <div class="tl">
+          <div class="tl-head">
+            <h3>Today's timeline</h3>
+            <div class="legend" aria-hidden="true">
+              <span><i class="k-work"></i>On the clock</span>
+              <span><i class="k-break"></i>Break</span>
+              <span><i class="k-meal"></i>Meal</span>
+              <span><i class="k-left"></i>Still to go</span>
+            </div>
+          </div>
+          <div class="track" id="track" role="img" aria-label="Timeline of today's shift"></div>
+          <div class="ticks" id="ticks" aria-hidden="true"></div>
+        </div>
+
+        <table class="punchlog" aria-label="Today's punches"><tbody id="punchlog"></tbody></table>
+      </article>
+
+      <div class="side">
+        <section class="register stock" aria-labelledby="h-money">
+          <h3 id="h-money">Made today</h3>
+          <div class="amt" id="moneyBig" aria-hidden="true"></div>
+          <p class="sr" id="moneySr"></p>
+          <div class="tape">
+            <span>Paid hours</span><span id="tapeHrs">0.000 h</span>
+            <span>× Rate</span><span id="tapeRate">—</span>
+            <span>= Before deductions</span><span id="tapeAmt">—</span>
+            <span>− Deductions <small id="tapeDedPct"></small></span><span id="tapeDed">—</span>
+            <span>= Take-home (est.)</span><span id="tapeNet">—</span>
+          </div>
+          <p class="note" id="moneyNote"></p>
+        </section>
+
+        <section class="summary stock" aria-labelledby="h-sum">
+          <h3 id="h-sum">This week &amp; pay</h3>
+          <dl>
+            <div class="srow">
+              <dt>Hours this week</dt><dd><span id="wkHrs">—</span> / <span id="wkTargetTxt">37.5</span> h</dd>
+              <div class="wkbar" aria-hidden="true"><i class="done" id="wkDone"></i><i class="live" id="wkLive"></i></div>
+              <p class="sub" id="wkSub"></p>
+            </div>
+            <div class="srow">
+              <dt>Next pay date</dt><dd id="nextPayTxt">—</dd>
+              <p class="sub" id="payIn"></p>
+            </div>
+            <div class="srow">
+              <dt>Last net pay</dt><dd id="lastNetTxt">—</dd>
+              <p class="sub" id="lastNetSub"><a href="#payslips">See payslips</a></p>
+            </div>
+          </dl>
+        </section>
+
+        <section class="settings stock" aria-labelledby="h-set">
+          <h3 id="h-set">Settings</h3>
+          <p class="set-help">Saved in this browser only.</p>
+          <label class="set-row" for="setRate"><span>Hourly rate<small id="rateHelp">Leave blank to use the rate on your latest payslip</small></span><span class="set-input"><span aria-hidden="true">$</span><input id="setRate" type="number" inputmode="decimal" min="0" max="500" step="0.01" placeholder="0.00"><span aria-hidden="true">/ h</span></span></label>
+          <label class="set-row" for="setUnpaid"><span>Unpaid breaks per day<small>Used until Workday posts today's deductions</small></span><span class="set-input"><input id="setUnpaid" type="number" inputmode="decimal" min="0" max="4" step="0.25"><span aria-hidden="true">h</span></span></label>
+          <label class="set-row" for="setTarget"><span>Paid hours per day</span><span class="set-input"><input id="setTarget" type="number" inputmode="decimal" min="1" max="16" step="0.25"><span aria-hidden="true">h</span></span></label>
+          <label class="set-row" for="setWeek"><span>Paid hours per week</span><span class="set-input"><input id="setWeek" type="number" inputmode="decimal" min="1" max="80" step="0.5"><span aria-hidden="true">h</span></span></label>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMINGS -->
+  <section id="view-timings" class="view" hidden aria-labelledby="h-timings">
+    <div class="view-head">
+      <div>
+        <p class="label kicker">Time cards from Workday</p>
+        <h1 id="h-timings" tabindex="-1">Timings</h1>
+      </div>
+      <div class="stepper" role="group" aria-label="Choose week">
+        <button type="button" id="wkPrev" aria-label="Earlier week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span class="t">Earlier</span></button>
+        <div class="wk" aria-live="polite"><b id="wkName">—</b><small id="wkPos">—</small></div>
+        <button type="button" id="wkNext" aria-label="Later week"><span class="t">Later</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+
+    <div class="stock cut">
+      <div class="wk-total">
+        <div><p class="label">Week total</p><div class="big num" id="wkTotal">—</div></div>
+        <div><p class="label">Days worked</p><div class="big num days-big" id="wkDays">—</div></div>
+        <div><p class="label">Status</p><div id="wkStatus" class="wk-status"></div></div>
+      </div>
+      <div class="scroll">
+        <table class="tc-table" aria-label="Daily hours">
+          <thead><tr><th>Day</th><th>In</th><th>Out</th><th>Paid hours <span aria-hidden="true">(line = target)</span></th><th>Status</th><th><span class="sr">Details</span></th></tr></thead>
+          <tbody id="wkBody"><tr><td colspan="6" class="loading-cell">Loading your time cards from Workday…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="anom" aria-labelledby="h-anom">
+      <div class="anom-head">
+        <div>
+          <h2 id="h-anom">Breaks &amp; anomalies</h2>
+          <p>Things to fix in Workday before your manager approves the period. Red stamps only appear here.</p>
+        </div>
+        <div class="filter" role="group" aria-label="Which weeks">
+          <button type="button" data-scope="all" aria-pressed="true" id="scopeAll">All loaded weeks</button>
+          <button type="button" data-scope="week" aria-pressed="false">Shown week</button>
+        </div>
+      </div>
+      <div class="sev-key"><span class="sev sev-high">High</span> fix soon <span class="sev sev-med">Medium</span> check it <span class="sev sev-low">Low</span> waiting on approval</div>
+      <ul class="flags" id="flags"></ul>
+    </section>
+  </section>
+
+  <!-- PAYSLIPS -->
+  <section id="view-payslips" class="view" hidden aria-labelledby="h-pay">
+    <div class="view-head">
+      <div>
+        <p class="label kicker">Payroll group · Hourly Canada</p>
+        <h1 id="h-pay" tabindex="-1">Payslips</h1>
+      </div>
+    </div>
+    <p class="loading-line" id="payLoading">Loading your payslips from Workday…</p>
+    <div id="payBody" hidden>
+      <div class="pay-top">
+        <section class="nextpay stock" aria-labelledby="h-next">
+          <div>
+            <p class="label" id="h-next">Next pay date</p>
+            <p class="date" id="npDate">—</p>
+            <p class="in" id="npIn"></p>
+          </div>
+          <div class="meta" id="npMeta"></div>
+        </section>
+        <section class="ytd stock" aria-labelledby="h-ytd">
+          <h3 id="h-ytd">Totals · last <span id="ytdN">0</span> periods</h3>
+          <div class="ytd-grid">
+            <div><span class="label">Earnings</span><b id="ytdEarn">—</b></div>
+            <div><span class="label">Deductions</span><b id="ytdDed">—</b></div>
+            <div class="net"><span class="label">Net</span><b id="ytdNet">—</b></div>
+          </div>
+          <div class="split" aria-hidden="true"><i class="n" id="splitN"></i><i class="d" id="splitD"></i></div>
+          <div class="split-cap"><span id="splitKept"></span><span id="splitDed"></span></div>
+        </section>
+      </div>
+
+      <section class="sec" aria-labelledby="h-recent">
+        <h2 id="h-recent">Recent payslips</h2>
+        <div class="stubs" id="stubs"></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-chart">
+        <h2 id="h-chart">Net pay per period</h2>
+        <div class="chart stock" id="chart"></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-hist">
+        <h2 id="h-hist">Pay history</h2>
+        <div class="stock">
+          <div class="scroll">
+            <table class="pay-table">
+              <thead><tr><th>Period</th><th>Earnings</th><th>Statutory deductions</th><th>Net</th></tr></thead>
+              <tbody id="histBody"></tbody>
+              <tfoot><tr><td>Total</td><td id="histEarn"></td><td class="ded" id="histDed"></td><td class="net" id="histNet"></td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+  </main>
+</div>
+
+<nav class="bottombar" aria-label="Main">
+  <a href="#home" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Home</a>
+  <a href="#timings" data-nav="timings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="3" width="16" height="18"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Timings</a>
+  <a href="#payslips" data-nav="payslips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Payslips</a>
+</nav>
+</body>
+</html>

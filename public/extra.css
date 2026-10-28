@@ -1,0 +1,75 @@
+/* additions for the live app, built on the Shift Card tokens */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.ink{color:var(--ink)}
+
+.form-error{border-left:4px solid var(--stamp);background:var(--stamp-wash);color:var(--fg);padding:10px 12px;font-size:14px;margin:0 0 16px}
+.mfa-note{font-size:14px;margin:0 0 12px;padding:10px 12px;background:var(--ink-wash);border-left:4px solid var(--ink)}
+.switch-sub{display:block;font-weight:400;font-size:12px;line-height:1.4;color:var(--muted);margin-top:2px}
+.switch{align-items:flex-start}
+.switch .knob{margin-top:1px}
+.mfa-restart{display:block;margin:12px auto 0}
+.btn-primary:disabled{cursor:progress}
+
+.banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-top:16px;padding:10px 14px;border:1.5px solid var(--stamp);background:var(--stamp-wash);font-size:14px}
+body.is-login .banner{display:none}
+
+.sync-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sync-line .label{letter-spacing:.08em}
+.chip-btn:disabled{opacity:.5;cursor:progress}
+.spinning svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.settings{padding:18px 22px 10px}
+.set-help{font-size:12px;color:var(--muted);margin:4px 0 6px}
+.set-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule);font-weight:600;font-size:14px}
+.set-row small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.set-input{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:13px;color:var(--muted)}
+.set-input input{width:86px;font:600 15px/1.2 "IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--fg);background:var(--card-2);border:1.5px solid var(--fg);border-radius:3px;padding:6px 8px;text-align:right}
+.set-input input:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.register .note button{font:inherit;font-weight:600;color:var(--ink);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+.register .amt.unset{font-size:clamp(30px,5vw,40px);color:var(--muted)}
+
+.loading-cell,.empty-cell{padding:22px 10px !important;height:auto !important;color:var(--muted);font-size:14px}
+.loading-line{color:var(--muted);font-size:14px}
+.days-big{font-size:32px}
+.wk-status{margin-top:6px}
+.pill-live{color:var(--meal)}
+.pill-live svg{animation:pulse 1.6s ease-in-out infinite}
+.pill-miss{color:var(--stamp)}
+.punch.miss{color:var(--stamp)}
+.more-row td{text-align:center;height:auto;padding:12px}
+.flags .flag.ok{border-left-color:var(--ink);grid-template-columns:1fr}
+.stub .body .net-l{align-self:end;font-weight:600}
+.adj-btn{font:600 12px/1 "Libre Franklin",system-ui,sans-serif;color:var(--ink);background:none;border:0;padding:2px 0;margin-left:6px;text-decoration:underline;cursor:pointer}
+.adj-btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.adj-tag{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--break);margin-left:4px}
+.adj-form{margin:12px 0 0;padding:12px 14px;border:1.5px dashed var(--break);background:var(--break-wash);font-size:14px}
+.adj-form label{display:block;font-weight:600;margin-bottom:8px}
+.adj-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.adj-row input{font:600 15px/1.2 "IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--fg);background:var(--card-2);border:1.5px solid var(--fg);border-radius:3px;padding:6px 8px}
+.adj-row input:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.adj-help{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.adj-err{margin:6px 0 0;font-size:13px;color:var(--stamp);font-weight:600}
+.today-warn li.info{border-left-color:var(--break);background:var(--break-wash)}
+.seg.adj{opacity:.55;outline:1.5px dashed var(--fg);outline-offset:-1.5px}
+.tape small{color:var(--muted);font-size:11px}
+.clock{padding:14px 0 4px;border-bottom:1px dashed var(--rule)}
+.clock-btns{display:flex;flex-wrap:wrap;gap:10px}
+.clock-btn{flex:1 1 140px;min-height:48px;border:2px solid currentColor;border-radius:4px;background:var(--card);font-family:"Big Shoulders Display","Oswald","Arial Narrow",sans-serif;font-weight:800;font-size:19px;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px 8px;cursor:pointer;box-shadow:0 3px 0 currentColor}
+.clock-btn:active{transform:translateY(2px);box-shadow:0 1px 0 currentColor}
+.clock-btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.clock-btn:disabled{cursor:progress;opacity:.6}
+.cb-in{color:var(--ink)}
+.cb-break{color:var(--break)}
+.cb-meal{color:var(--meal)}
+.cb-out{color:var(--stamp)}
+.clock-btn[data-armed]{background:currentColor;box-shadow:0 3px 0 var(--fg)}
+.clock-btn[data-armed] .t{color:var(--card)}
+.clock-msg{min-height:1.4em;margin:8px 0 0;font-size:13px;color:var(--muted)}
+.clock-msg.err{color:var(--stamp);font-weight:600}
+.clock-msg.ok{color:var(--meal);font-weight:600}
+.today-warn{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.today-warn li{border-left:4px solid var(--stamp);background:var(--stamp-wash);padding:8px 12px;font-size:13.5px;line-height:1.45}
+.today-warn li b{display:block;font-size:14px}
+.today-warn a{color:var(--ink);font-weight:600}
+.when-today{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:11px;color:var(--meal);margin-left:6px;letter-spacing:.06em;text-transform:uppercase}
